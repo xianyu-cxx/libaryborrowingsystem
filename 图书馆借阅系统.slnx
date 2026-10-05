@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="图书馆借阅系统/图书馆借阅系统.vcxproj" Id="3ae507f1-a501-4f54-88fc-e90f77bf1997" />
+</Solution>
