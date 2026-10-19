@@ -1,128 +1,143 @@
 #include <iostream>
 #include <string>
-#include <vector>   // STL vector，报告要求的STL容器
+#include <vector>
 using namespace std;
 
-class Book {
-private:
-    string name;
-    string isbn;
-    string press;
-    double price;
-    int pages;
-    bool isAvailable;
+// ========== 基类：资源 Resource ==========
+class Resource
+{
+protected:
+    string name;    //资源名称
+    string id;      //资源编号
+    int totalNum;   //总数量
+    int availNum;   //可借数量
 public:
-    Book(string n = "", string i = "", string p = "", double pr = 0, int pg = 0, bool ava = true)
-        : name(n), isbn(i), press(p), price(pr), pages(pg), isAvailable(ava) {
+    //基类构造函数
+    Resource(string n, string i, int t, int a) :name(n), id(i), totalNum(t), availNum(a) {}
+
+    //基类公共方法
+    void addCount(int num)  //增加资源数量
+    {
+        totalNum += num;
+        availNum += num;
     }
-
-    void setInfo(string n, string i, string p, double pr, int pg, bool ava) {
-        name = n; isbn = i; press = p; price = pr; pages = pg; isAvailable = ava;
-    }
-    void setName(string n) { name = n; }
-    void setIsbn(string i) { isbn = i; }
-    void setPress(string p) { press = p; }
-    void setPrice(double pr) { price = pr; }
-    void setPages(int pg) { pages = pg; }
-    void setAvailable(bool ava) { isAvailable = ava; }
-
-    string getName() const { return name; }
-    string getIsbn() const { return isbn; }
-    string getPress() const { return press; }
-    double getPrice() const { return price; }
-    int getPages() const { return pages; }
-    bool getAvailable() const { return isAvailable; }
-
-    void showInfo() const {
-        cout << "====图书信息====" << endl;
-        cout << "书名：" << name << endl;
-        cout << "ISBN：" << isbn << endl;
-        cout << "出版社：" << press << endl;
-        cout << "价格：" << price << endl;
-        cout << "页数：" << pages << endl;
-        cout << "在馆状态：" << (isAvailable ? "可借阅" : "已借出") << endl;
-    }
-
-    // ISBN?10校验
-    bool checkIsbn() const {
-        string s = isbn;
-        string pure;
-        for (char c : s) if (c != '-') pure += c;
-        if (pure.size() != 10) return false;
-        int sum = 0;
-        for (int i = 0; i < 9; i++) {
-            if (!isdigit(pure[i])) return false;
-            sum += (pure[i] - '0') * (i + 1);
-        }
-        char last = pure[9];
-        if (last == 'X' || last == 'x') sum += 10 * 10;
-        else if (isdigit(last)) sum += (last - '0') * 10;
-        else return false;
-        return sum % 11 == 0;
-    }
-};
-
-// 学生类：Student，借书函数参数传入Book对象 →【依赖关系】学生依赖Book完成借书
-class Student {
-private:
-    string stuName;
-    int stuId;
-public:
-    Student(string name = "", int id = 0) :stuName(name), stuId(id) {}
-    // 借书：参数传Book对象，依赖Book类
-    bool borrowBook(Book& b) {
-        if (b.getAvailable()) {
-            b.setAvailable(false);
-            cout << stuName << " 借书成功！" << endl;
+    bool reduceCount(int num) //减少资源数量
+    {
+        if (totalNum >= num)
+        {
+            totalNum -= num;
+            if (availNum > totalNum) availNum = totalNum;
             return true;
         }
-        else {
-            cout << "借书失败，图书已被借出！" << endl;
-            return false;
+        return false;
+    }
+    bool borrow() //借阅
+    {
+        if (availNum > 0)
+        {
+            availNum--;
+            return true;
+        }
+        cout << "资源不足，借阅失败！" << endl;
+        return false;
+    }
+    void giveBack() //归还
+    {
+        if (availNum < totalNum)
+        {
+            availNum++;
         }
     }
-    void returnBook(Book& b) {
-        b.setAvailable(true);
-        cout << stuName << " 还书完成" << endl;
+    //基类普通显示函数，子类可以扩展自己的信息
+    void showBaseInfo()
+    {
+        cout << "名称：" << name << " 编号：" << id << " 总数：" << totalNum << " 可借：" << availNum << endl;
     }
+    //基类析构
+    ~Resource() {}
 };
 
-// Library图书馆类：内部持有vector<Book> books 【组合关系】图书馆包含一批图书对象
-class Library {
+// ========== 派生类1：图书Book，公有继承Resource ==========
+class Book : public Resource
+{
 private:
-    vector<Book> books;  // STL容器vector，报告要求的特色功能
+    string isbn;
+    string press;   //出版社
+    int pages;      //页数
 public:
-    void addBook(const Book& b) {
-        books.push_back(b);
+    //派生类构造：必须先调用基类构造函数
+    Book(string n, string i, int t, int a, string is, string p, int pg)
+        : Resource(n, i, t, a), isbn(is), press(p), pages(pg) {
     }
-    void showAllBooks() {
-        for (auto& bk : books) {
-            bk.showInfo();
-        }
+
+    //子类扩展：显示图书全部信息（基类公共信息+自己独有信息）
+    void showInfo()
+    {
+        showBaseInfo(); //调用继承来的基类函数
+        cout << "【图书】ISBN:" << isbn << " 出版社:" << press << " 页数:" << pages << endl;
     }
 };
 
+// ========== 派生类2：杂志Magazine，公有继承Resource ==========
+class Magazine : public Resource
+{
+private:
+    string issn;
+    string pubDate; //出版年月
+public:
+    Magazine(string n, string i, int t, int a, string is, string date)
+        : Resource(n, i, t, a), issn(is), pubDate(date) {
+    }
+
+    void showInfo()
+    {
+        showBaseInfo();
+        cout << "【杂志】ISSN:" << issn << " 出版年月:" << pubDate << endl;
+    }
+};
+
+// ========== 派生类3：电子资源EResource，公有继承Resource ==========
+class EResource : public Resource
+{
+private:
+    string link;
+    string validTime; //有效期
+public:
+    EResource(string n, string i, int t, int a, string l, string v)
+        : Resource(n, i, t, a), link(l), validTime(v) {
+    }
+
+    void showInfo()
+    {
+        showBaseInfo();
+        cout << "【电子资源】链接:" << link << " 有效期:" << validTime << endl;
+    }
+};
+
+//主函数，菜单测试
 int main()
 {
-    Book b1("C++程序设计", "7-302-10253-5", "清华大学出版社", 39.5, 320, true);
-    Book b2("数据结构", "7-302-20213-3", "清华大学出版社", 45, 410, true);
+    //创建子类对象，会自动执行：先基类构造，再子类构造
+    Book b("C++程序设计", "B001", 5, 5, "9781234", "人民邮电出版社", 320);
+    Magazine m("计算机学报", "M001", 3, 3, "CN11-2196", "2026-10");
+    EResource e("在线C++教程", "E001", 10, 10, "https://xxx.com", "2028-12");
 
-    Library lib;
-    lib.addBook(b1);
-    lib.addBook(b2);
-    cout << "图书馆全部图书：" << endl;
-    lib.showAllBooks();
+    cout << "=======初始资源信息=======" << endl;
+    b.showInfo();
+    m.showInfo();
+    e.showInfo();
 
-    Student s1("张三", 2025001);
-    cout << "\n-----学生借书测试-----" << endl;
-    s1.borrowBook(b1);
-    b1.showInfo();
+    cout << "\n=======测试借阅图书=======" << endl;
+    b.borrow();
+    b.showInfo();
 
-    cout << "\n-----学生还书测试-----" << endl;
-    s1.returnBook(b1);
-    b1.showInfo();
+    cout << "\n=======测试归还图书=======" << endl;
+    b.giveBack();
+    b.showInfo();
 
-    if (b1.checkIsbn()) cout << "ISBN校验：合法\n";
-    else cout << "ISBN校验：不合法\n";
+    cout << "\n=======给杂志增加2本=======" << endl;
+    m.addCount(2);
+    m.showInfo();
+
     return 0;
 }
